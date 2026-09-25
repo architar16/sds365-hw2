@@ -31,3 +31,6 @@ This returns a list containing:
 - Website: [https://architar16.github.io/sds365-hw2/index.html](https://architar16.github.io/sds365-hw2/index.html)
 - App design mockup: [https://architar16.github.io/sds365-hw2/appdesign.html](https://architar16.github.io/sds365-hw2/appdesign.html)
 - Interactive Shiny app: [https://architaroy.shinyapps.io/hw2imagefiles/](https://architaroy.shinyapps.io/hw2imagefiles/)
+
+## AI Disclosure
+In accordance with the course policy permitting partial use of generative AI on coding and programming assignments, I used ChatGPT (OpenAI) and Claude (Anthropic) as supplemental tools to help me understand PCA concepts, develop and debug portions of my R/Shiny code, and troubleshoot errors. I critically reviewed, tested, and modified all AI-assisted suggestions and verified the final implementation myself. The final code, analysis, and submitted work reflect my own review and understanding.
