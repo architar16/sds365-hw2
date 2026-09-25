@@ -1,0 +1,274 @@
+---
+title: "HW2 Web Site - PCA Image Compression"
+author: "Archita Roy"
+date: "2026-09-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+
+img1 = data.matrix(read_csv("image1.csv"))
+img2 = data.matrix(read_csv("image2.csv"))
+img3 = data.matrix(read_csv("image3.csv"))
+img4 = data.matrix(read_csv("image4.csv"))
+```
+
+# PCA Image Compression
+
+This website explores image compression using Principal Component Analysis (PCA). For each image, I will compare the original image to rank-k PCA approximations and examine how the approximation error changes as k increases.
+
+# Image Compression Function
+
+The following image compression function takes an image matrix and a value of k. It returns the rank-k PCA approximation and its Frobenius norm error.
+
+```{r compression-function}
+compress_image = function(X, k) {
+
+  X = data.matrix(X)
+  pca = prcomp(X, center = FALSE, scale. = FALSE)
+
+  if (k < 1 || k > ncol(pca$x)) {
+    stop("k must be between 1 and ", ncol(pca$x))
+  }
+
+  scores_k = pca$x[, 1:k, drop = FALSE]
+  loadings_k = pca$rotation[, 1:k, drop = FALSE]
+
+  Xk = scores_k %*% t(loadings_k)
+
+  error = norm(X - Xk, type = "F")
+
+  return(list(
+    approximation = Xk,
+    error = error
+  ))
+}
+```
+
+```{r helper-functions, include=FALSE}
+
+# Function to display an image
+plot_image = function(X, title = "") {
+
+  image(
+    t(X[nrow(X):1, ]),
+    col = gray.colors(256),
+    axes = FALSE,
+    main = title
+  )
+}
+
+# Function to display original image and k = 1 through 10
+plot_approximations = function(X) {
+
+  par(mfrow = c(3, 4), mar = c(1, 1, 3, 1))
+
+  # Original image
+  plot_image(X, "Original")
+
+  # PCA approximations
+  for (k in 1:10) {
+    Xk = compress_image(X, k)$approximation
+    plot_image(Xk, paste("k =", k))
+  }
+
+  # Empty final plot
+  plot.new()
+
+  par(mfrow = c(1, 1))
+}
+
+# Function to plot approximation error for all k
+plot_error = function(X) {
+
+  pca = prcomp(X, center = FALSE, scale. = FALSE)
+  max_k = ncol(pca$x)
+
+  errors = numeric(max_k)
+
+  for (k in 1:max_k) {
+    errors[k] = compress_image(X, k)$error
+  }
+
+  plot(
+    1:max_k,
+    errors,
+    type = "l",
+    xlab = "k",
+    ylab = "Frobenius Norm Error",
+    main = "Approximation Error vs. k"
+  )
+
+  invisible(errors)
+}
+
+# Function to plot first eigenvector and first PC score
+plot_first_pc = function(X) {
+
+  pca = prcomp(X, center = FALSE, scale. = FALSE)
+
+  par(mfrow = c(1, 2))
+
+  # First eigenvector
+  plot(
+    pca$rotation[, 1],
+    type = "l",
+    xlab = "Column",
+    ylab = "Loading",
+    main = "First Eigenvector"
+  )
+
+  # First PC score
+  plot(
+    pca$x[, 1],
+    type = "l",
+    xlab = "Row",
+    ylab = "PC1 Score",
+    main = "First PC Score"
+  )
+
+  par(mfrow = c(1, 1))
+}
+```
+
+# Image 1
+
+## Original Image and PCA Approximations
+
+The following plots show the original image followed by the rank-k PCA approximations for k = 1 through 10.
+
+```{r image1-approximations, echo=FALSE, fig.width=10, fig.height=8}
+plot_approximations(img1)
+```
+
+## Approximation Error
+
+The following plot shows the Frobenius norm approximation error for all possible values of k.
+
+```{r image1-error, echo=FALSE, fig.width=8, fig.height=5}
+plot_error(img1)
+```
+
+As k increases, the approximation error decreases because more principal components are being used to reconstruct the original image.
+
+## First Eigenvector and First PC Score
+
+```{r image1-pc, echo=FALSE, fig.width=10, fig.height=5}
+plot_first_pc(img1)
+```
+
+### Interpretation
+
+Unlike a smooth or slowly-varying pattern, the first eigenvector for Image 1 is close to flat across most columns, with one sharp downward spike around column 45-50. That spike lines up with the thin vertical seam visible in the original image and in every k = 1...10 approximation above, so the dominant uncentered component is essentially detecting "how strong is the pixel value right at that seam," rather than describing a broad gradient across the whole image. Consistent with that, the first PC score sits at a roughly constant level (around -17 to -22) across all 1000 rows instead of swinging widely, meaning nearly every row activates that seam feature to about the same degree. This localized, spike-like structure - rather than a smooth global pattern - is also why the error curve declines gradually and needs a large fraction of the available components before flattening out: a single sharp local feature does not compress nearly as efficiently as a smooth, broadly-shared one.
+
+### Sufficient Approximation
+
+I think k = 40 provides a sufficiently good approximation of Image 1 because the error curve has already come down substantially from its starting value by that point and continues to flatten from there, while the k = 1...10 grid above shows the image is still fairly coarse at k = 10 - most of the remaining gain happens gradually rather than in one dramatic jump, so a moderate k in the range where the curve visibly bends is a reasonable compromise between compression and fidelity.
+
+
+# Image 2
+
+## Original Image and PCA Approximations
+
+The following plots show the original image followed by the rank-k PCA approximations for k = 1 through 10.
+
+```{r image2-approximations, echo=FALSE, fig.width=10, fig.height=8}
+plot_approximations(img2)
+```
+
+## Approximation Error
+
+The following plot shows the Frobenius norm approximation error for all possible values of k.
+
+```{r image2-error, echo=FALSE, fig.width=8, fig.height=5}
+plot_error(img2)
+```
+
+As k increases, the approximation error decreases because more principal components are being used to reconstruct the original image.
+
+## First Eigenvector and First PC Score
+
+```{r image2-pc, echo=FALSE, fig.width=10, fig.height=5}
+plot_first_pc(img2)
+```
+
+### Interpretation
+
+Image 2's first eigenvector is a smooth, almost perfectly straight line declining from 0 to about -0.17 across the 100 columns - a pure left-to-right brightness gradient, with no zigzag or local features. The first PC score, in contrast, swings widely from about -2000 to +4000 across the 1000 rows. Put together, this says the image is essentially one fixed spatial pattern (that linear gradient) whose intensity is simply scaled up or down row by row - some rows are a strongly negative multiple of the gradient, others a strongly positive multiple, but every row shares the same underlying shape. That is exactly the signature of a (nearly) rank-1 matrix, and it matches the error curve directly: error starts at about 2 at k = 1 and drops to essentially 0 by k = 2-3, orders of magnitude smaller than image 1's errors at the same k.
+
+### Sufficient Approximation
+
+I think k = 2 provides a sufficiently good approximation of Image 2 because the error curve shows the reconstruction is already at essentially 0 (down from about 2 at k = 1) by k = 2-3 and stays flat all the way out to k = 100 - additional components contribute nothing, which is consistent with the image being very close to a rank-1 or rank-2 matrix by construction.
+
+
+# Image 3
+
+## Original Image and PCA Approximations
+
+The following plots show the original image followed by the rank-k PCA approximations for k = 1 through 10.
+
+```{r image3-approximations, echo=FALSE, fig.width=10, fig.height=8}
+plot_approximations(img3)
+```
+
+## Approximation Error
+
+The following plot shows the Frobenius norm approximation error for all possible values of k.
+
+```{r image3-error, echo=FALSE, fig.width=8, fig.height=5}
+plot_error(img3)
+```
+
+As k increases, the approximation error decreases because more principal components are being used to reconstruct the original image.
+
+## First Eigenvector and First PC Score
+
+```{r image3-pc, echo=FALSE, fig.width=10, fig.height=5}
+plot_first_pc(img3)
+```
+
+### Interpretation
+
+Image 3's first eigenvector has a wavy, non-monotonic shape - it dips to about -0.08 around columns 60-90, rises, dips again near columns 150-170, and peaks near column 210 before tapering off - rather than the flat or purely linear shapes seen in Images 1 and 2. The first PC score traces a broad hump across rows, rising from about -12 near row 0 to a peak of about 28 around rows 100-130, then gradually declining with a couple of smaller dips before settling back down by row 340. Since this is a real photograph, that hump most plausibly corresponds to the puppy's head and body, which occupy roughly the middle third of the image: rows through that region score strongly on this component because they contain the dark fur and facial contrast, while rows near the top and bottom (background and floor) score lower. This is a much richer, more localized pattern than either of the previous two images, which is consistent with a natural photograph needing many more components to reconstruct well.
+
+### Sufficient Approximation
+
+I think k = 40 provides a sufficiently good approximation of Image 3 because the error curve falls steeply over the first few dozen values of k and then flattens noticeably, and by k = 10 the subject is already recognizable but still visibly soft in the k = 1...10 grid above - a k in the range where the curve has mostly leveled off gives a much sharper result without needing to approach the full rank (over 300) where the error finally reaches 0.
+
+
+# Image 4
+
+## Original Image and PCA Approximations
+
+The following plots show the original image followed by the rank-k PCA approximations for k = 1 through 10.
+
+```{r image4-approximations, echo=FALSE, fig.width=10, fig.height=8}
+plot_approximations(img4)
+```
+
+## Approximation Error
+
+The following plot shows the Frobenius norm approximation error for all possible values of k.
+
+```{r image4-error, echo=FALSE, fig.width=8, fig.height=5}
+plot_error(img4)
+```
+
+As k increases, the approximation error decreases because more principal components are being used to reconstruct the original image.
+
+## First Eigenvector and First PC Score
+
+```{r image4-pc, echo=FALSE, fig.width=10, fig.height=5}
+plot_first_pc(img4)
+```
+
+### Interpretation
+
+Image 4's first eigenvector rises to a modest peak (about 0.04) around columns 30-40, then drops sharply to a deep trough of about -0.22 near column 85, before recovering back toward 0 by column 120. The first PC score shows a matching sharp trough of about -22 around rows 145-150, set against otherwise mild fluctuation between about -10 and 8 elsewhere. Both of these point to the same thing: a single strong, localized feature - almost certainly the bright rectangular object visible in the lower-middle portion of the original image - is dominating the first component, since a broad or evenly distributed pattern would not produce such a sharp, isolated extreme in both the column loadings and the row scores at matching locations.
+
+### Sufficient Approximation
+
+I think k = 20 provides a sufficiently good approximation of Image 4 because the error curve drops from about 120 at k = 1 to a small fraction of that within the first 20 or so components and flattens well before reaching its full rank of about 120, so a moderate k captures the dominant bright-object feature and most of the surrounding texture without needing to reconstruct the image essentially exactly.
