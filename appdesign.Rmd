@@ -14,7 +14,13 @@ The main portion of the app would display the original image and compressed imag
 
 A smaller value of k would produce greater compression but lose more image detail. A larger value of k would retain more information from the original image.
 
-# App Mockup
+# App Mockup Using ChatGPT
+
+```{r, echo=FALSE, out.width="100%"}
+knitr::include_graphics("appimagemockup.png")
+```
+
+# Actual App
 
 ```{r, echo=FALSE, out.width="100%"}
 knitr::include_graphics("appimage.png")
